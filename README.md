@@ -31,3 +31,7 @@ The script will then convert each text file to an audio file, then concatenate t
 - Note that chapter files will be compiled in alphabetical order and chapter bookmarks will be named after the file name. So if you have named chapters such as `Introduction`, `Prologue`, etc., then you will need to prefix these with numbers like `00 Introduction`, `01 Prologue`, etc.
 
 - Remove any characters you don't want the text to speak. For example, one book I converted used a lot of underscores to separate ideas. After conversion, the audiobook would sometimes say "underscore, underscore, underscore, underscore, underscore, underscore, underscore, underscore."
+
+## Contributing
+
+I got this script to a point where it works for what I wanted to do, but it could definitely use some improvements and added error handling, so feel free to submit PRs with useful features.
