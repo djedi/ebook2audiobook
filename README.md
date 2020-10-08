@@ -22,15 +22,15 @@ Run the script passing in the directory with your files:
 
 I've included a directory named `Alice in Wonderland` so that you can test this script and use it for an example.
 
-You will be prompted to use a male or female voice to read and for the title and author of the book.
+You will be prompted for the title and author of the book.
 
 The script will then convert each text file to an audio file, then concatenate them all into on chaptered m4b file.
 
 ## Helpful Tips
 
 - Note that chapter files will be compiled in alphabetical order and chapter bookmarks will be named after the file name. So if you have named chapters such as `Introduction`, `Prologue`, etc., then you will need to prefix these with numbers like `00 Introduction`, `01 Prologue`, etc.
-
 - Remove any characters you don't want the text to speak. For example, one book I converted used a lot of underscores to separate ideas. After conversion, the audiobook would sometimes say "underscore, underscore, underscore, underscore, underscore, underscore, underscore, underscore."
+- You can set you default voice in System Preferences -> Accessibility -> Speech. Not all voices are supported by `say` - mainly the Siri voices. Or, you could edit the script to pass in a voice using the `-v` options in `say`. Run `say -v ?` to see voice options.
 
 ## Contributing
 

@@ -22,14 +22,6 @@ if not os.path.isfile(cover_filename):
     except IndexError:
         exit()
 
-voice = 'Alex'
-vchoice = input('Male or Female voice [M/f]? ')
-try:
-    if vchoice[0].lower() == 'f':
-        voice = 'Vicki'
-except IndexError:
-    pass
-
 title = input('Audiobook Title: ')
 author = input('Audiobook Author: ')
 txt_dir = sys.argv[1]
@@ -43,7 +35,7 @@ for filename in sorted(glob.glob(os.path.join(txt_dir, '*.txt'))):
     if os.path.isfile(aiff_filename) :
         print('"{}" already exists. Skipping.'.format(aiff_filename))
     else:
-        cmd = 'say -v {} -f "{}" -o "{}"'.format(voice, filename, aiff_filename)
+        cmd = 'say -f "{}" -o "{}"'.format(voice, filename, aiff_filename)
         print('Converting "{}" to audio...'.format(filename))
         call(cmd, shell=True)
 
