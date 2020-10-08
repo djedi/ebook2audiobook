@@ -1,0 +1,33 @@
+# ebook2audiobook
+
+This is basically a script that automates a number of commands to create a text version of an eBook to an Audiobook.
+
+## How to run
+
+Create a directory full of chaptered text files. Chaptered text files such as `Chapter 01.txt`, `Chapter 02.txt`, etc.
+
+Create a cover image and name it `cover.jpg` and put it in the directory with the text files.
+
+Be sure to have [FFmpeg](https://ffmpeg.org/) and [mp4v2](https://github.com/TechSmith/mp4v2) installed. You can install with brew.
+
+```bash
+brew install ffmpeg mp4v2
+```
+
+Run the script passing in the directory with your files:
+
+```bash
+./ebook2audiobook.py "Alice in Wonderland"
+```
+
+I've included a directory named `Alice in Wonderland` so that you can test this script and use it for an example.
+
+You will be prompted to use a male or female voice to read and for the title and author of the book.
+
+The script will then convert each text file to an audio file, then concatenate them all into on chaptered m4b file.
+
+## Helpful Tips
+
+- Note that chapter files will be compiled in alphabetical order and chapter bookmarks will be named after the file name. So if you have named chapters such as `Introduction`, `Prologue`, etc., then you will need to prefix these with numbers like `00 Introduction`, `01 Prologue`, etc.
+
+- Remove any characters you don't want the text to speak. For example, one book I converted used a lot of underscores to separate ideas. After conversion, the audiobook would sometimes say "underscore, underscore, underscore, underscore, underscore, underscore, underscore, underscore."
