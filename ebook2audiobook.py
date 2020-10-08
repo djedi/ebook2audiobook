@@ -25,7 +25,7 @@ if not os.path.isfile(cover_filename):
 voice = 'Alex'
 vchoice = input('Male or Female voice [M/f]? ')
 try:
-    if vchoice[0].lower == 'f':
+    if vchoice[0].lower() == 'f':
         voice = 'Vicki'
 except IndexError:
     pass
