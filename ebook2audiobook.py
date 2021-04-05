@@ -1,16 +1,81 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 
-import sys 
+import sys
+import getopt
 import glob
 import os
 from pathlib import Path
 from subprocess import call, check_output
 
+USAGE = 'Usage: python3 {} [-v <voice> -t <title> -a <author> --clean] <txt_directory>'.format(sys.argv[0])
+
 try:
-    txt_dir = sys.argv[1]
+    opts, args = getopt.getopt(sys.argv[1:], "hcCv:t:a:", ["help", "clean", "clean-only", "voice=", "title=", "author="])
+except getopt.GetoptError:
+    print(USAGE)
+    sys.exit(2)
+
+try:
+    txt_dir = args[0]
 except IndexError:
-    print('Usage: pass in directory that contains txt files to convert to audio.')
+    print(USAGE)
     exit()
+
+voice = None
+title = None
+author = None
+
+# Look for meta.yaml
+meta_yaml = os.path.join(txt_dir, 'meta.yaml')
+if os.path.isfile(meta_yaml):
+    skip = False
+    try:
+        import yaml
+    except ImportError:
+        skip = True
+        print("In order to use the yaml featured you will need to install pyyaml.\n> pip install -r requirements.txt")
+        cont = input('Would you like to continue [y/N]? ')
+        try:
+            if cont[0].lower() != 'y':
+                exit()
+        except IndexError:
+            exit()
+    if not skip:
+        with open(meta_yaml, 'r') as stream:
+            try:
+                ydata = (yaml.safe_load(stream))
+                title = ydata.get('Title')
+                author = ydata.get('Author')
+                voice = ydata.get('Voice')
+            except yaml.YAMLError as exc:
+                print (exc)
+
+def clean():
+    print("Cleaning...")
+    for filename in os.listdir(txt_dir):
+        ext = os.path.splitext(filename)[1]
+        if ext in ('.m4a', '.aiff') or filename in ('FILES', 'METADATA'):
+            os.remove(os.path.join(txt_dir, filename))
+            print ('DELETED: {}'.format(filename))
+
+for o, a in opts:
+    if o in ('-h', '--help'):
+        print (USAGE)
+        exit()
+    if o in ('-c', '--clean'):
+        clean()
+    if o in ('-C', '--clean-only'):
+        clean()
+        exit()
+    if o in ('-v', '--voice'):
+        voice = a
+        print ('Using voice: {}'.format(voice))
+    if o in ('-t', '--title'):
+        title = a
+        print ('Title: {}'.format(title))
+    if o in ('-a', '--author'):
+        author = a
+        print ('Author: {}'.format(author))
 
 # Look for cover.jpg in txt_dir
 cover_filename = os.path.join(txt_dir, 'cover.jpg')
@@ -22,9 +87,10 @@ if not os.path.isfile(cover_filename):
     except IndexError:
         exit()
 
-title = input('Audiobook Title: ')
-author = input('Audiobook Author: ')
-txt_dir = sys.argv[1]
+if not title:
+    title = input('Audiobook Title: ')
+if not author:
+    author = input('Audiobook Author: ')
 
 file_list_path = os.path.join(txt_dir, 'FILES')
 metadata_path = os.path.join(txt_dir, 'METADATA')
@@ -32,10 +98,13 @@ metadata_path = os.path.join(txt_dir, 'METADATA')
 print('# Converting txt files to audio:')
 for filename in sorted(glob.glob(os.path.join(txt_dir, '*.txt'))):
     aiff_filename = os.path.join(txt_dir, Path(filename).stem + '.aiff')
-    if os.path.isfile(aiff_filename) :
+    if os.path.isfile(aiff_filename):
         print('"{}" already exists. Skipping.'.format(aiff_filename))
     else:
-        cmd = 'say -f "{}" -o "{}"'.format(voice, filename, aiff_filename)
+        use_voice = ''
+        if voice:
+            use_voice = '-v {} '.format(voice)
+        cmd = 'say {}-f "{}" -o "{}"'.format(use_voice, filename, aiff_filename)
         print('Converting "{}" to audio...'.format(filename))
         call(cmd, shell=True)
 
@@ -54,11 +123,11 @@ for filename in sorted(glob.glob(os.path.join(txt_dir, '*.aiff'))):
 print('# Building metadata file')
 fm = open(metadata_path, 'w')
 fm.writelines([
-    ';FFMETADATA\n', 
+    ';FFMETADATA\n',
     'title={}\n'.format(title),
     'artist={}\n'.format(author),
     'album={}\n'.format(title),
-    'genre=Audiobooks\n',    
+    'genre=Audiobooks\n',
 ])
 m4a_files = sorted(glob.glob(os.path.join(txt_dir, '*.m4a')))
 fl = open(file_list_path, 'w')
@@ -79,7 +148,7 @@ for filename in m4a_files:
     ])
     start = end
 fl.close()
-fm.close()        
+fm.close()
 
 # Compiling ebook
 print('# Compiling eBook')
@@ -89,3 +158,5 @@ cmd = 'ffmpeg -f concat -safe 0 -i "{}" -i "{}" -map_metadata 1 -vn -y -acodec c
 call(cmd, shell=True)
 cmd = 'mp4art -q --add "{}" "{}"'.format(cover_filename, audiobook_name)
 call(cmd, shell=True)
+
+

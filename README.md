@@ -20,6 +20,23 @@ Run the script passing in the directory with your files:
 ./ebook2audiobook.py "Alice in Wonderland"
 ```
 
+You can pass the following args into the script:
+
+	-h, --help: Show a short usage snippet
+	-c, --clean: clean out old .aiff, .m4a, METADATA, and FILES files before creating audiobook
+	-C, --clean-only: clean out old files and exit
+	-t, --title: audobook title. If not specified, it will look in the meta.yaml or prompt for it
+	-a, --author: audiobook author. If not specified, it will look in the meta.yaml or prompt for it
+	-v, --voice: Specify the voice to use in the mac `say` command. If not specified, it will use your default.
+
+You can also save time when testing by creating a `meta.yaml` file to specify the title, author, and voice. Here is an example:
+
+```yaml
+Title: Alice’s Adventures in Wonderland
+Author: Lewis Carroll
+Voice: Samantha
+```
+
 I've included a directory named `Alice in Wonderland` so that you can test this script and use it for an example.
 
 You will be prompted for the title and author of the book.
