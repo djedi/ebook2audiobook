@@ -3,6 +3,7 @@
 import sys
 import getopt
 import glob
+import multiprocessing
 import os
 from pathlib import Path
 from subprocess import call, check_output
@@ -10,7 +11,7 @@ from subprocess import call, check_output
 USAGE = 'Usage: python3 {} [-v <voice> -t <title> -a <author> --clean] <txt_directory>'.format(sys.argv[0])
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hcCv:t:a:", ["help", "clean", "clean-only", "voice=", "title=", "author="])
+    opts, args = getopt.getopt(sys.argv[1:], "hcCrv:t:a:", ["help", "clean", "clean-only", "recompile", "voice=", "title=", "author="])
 except getopt.GetoptError:
     print(USAGE)
     sys.exit(2)
@@ -20,6 +21,9 @@ try:
 except IndexError:
     print(USAGE)
     exit()
+file_list_path = os.path.join(txt_dir, 'FILES')
+metadata_path = os.path.join(txt_dir, 'METADATA')
+cover_filename = os.path.join(txt_dir, 'cover.jpg')
 
 voice = None
 title = None
@@ -44,9 +48,9 @@ if os.path.isfile(meta_yaml):
         with open(meta_yaml, 'r') as stream:
             try:
                 ydata = (yaml.safe_load(stream))
-                title = ydata.get('Title')
-                author = ydata.get('Author')
-                voice = ydata.get('Voice')
+                title = ydata.get('title')
+                author = ydata.get('author')
+                voice = ydata.get('voice')
             except yaml.YAMLError as exc:
                 print (exc)
 
@@ -57,6 +61,16 @@ def clean():
         if ext in ('.m4a', '.aiff') or filename in ('FILES', 'METADATA'):
             os.remove(os.path.join(txt_dir, filename))
             print ('DELETED: {}'.format(filename))
+
+# Compiling ebook
+def compile_audiobook():
+    print('# Compiling eBook')
+    audiobook_name = '{} by {}.m4b'.format(title, author)
+    cmd = 'ffmpeg -f concat -safe 0 -i "{}" -i "{}" -map_metadata 1 -vn -y -acodec copy "{}"'.format(
+        file_list_path, metadata_path, audiobook_name)
+    call(cmd, shell=True)
+    cmd = 'mp4art -q --add "{}" "{}"'.format(cover_filename, audiobook_name)
+    call(cmd, shell=True)
 
 for o, a in opts:
     if o in ('-h', '--help'):
@@ -76,9 +90,11 @@ for o, a in opts:
     if o in ('-a', '--author'):
         author = a
         print ('Author: {}'.format(author))
+    if o in ('-r', '--recompile'):
+        compile_audiobook()
+        exit()
 
 # Look for cover.jpg in txt_dir
-cover_filename = os.path.join(txt_dir, 'cover.jpg')
 if not os.path.isfile(cover_filename):
     cont = input('cover.jpg is missing, would you like to continue [y/N]? ')
     try:
@@ -92,11 +108,8 @@ if not title:
 if not author:
     author = input('Audiobook Author: ')
 
-file_list_path = os.path.join(txt_dir, 'FILES')
-metadata_path = os.path.join(txt_dir, 'METADATA')
 
-print('# Converting txt files to audio:')
-for filename in sorted(glob.glob(os.path.join(txt_dir, '*.txt'))):
+def txt_to_aiff(txt_dir, filename):
     aiff_filename = os.path.join(txt_dir, Path(filename).stem + '.aiff')
     if os.path.isfile(aiff_filename):
         print('"{}" already exists. Skipping.'.format(aiff_filename))
@@ -104,9 +117,27 @@ for filename in sorted(glob.glob(os.path.join(txt_dir, '*.txt'))):
         use_voice = ''
         if voice:
             use_voice = '-v {} '.format(voice)
-        cmd = 'say {}-f "{}" -o "{}"'.format(use_voice, filename, aiff_filename)
+        cmd = 'say {}-f "{}" -o "{}" >/dev/null 2>&1'.format(use_voice, filename, aiff_filename)
         print('Converting "{}" to audio...'.format(filename))
         call(cmd, shell=True)
+
+
+print('# Converting txt files to audio:')
+# for filename in sorted(glob.glob(os.path.join(txt_dir, '*.txt'))):
+    # aiff_filename = os.path.join(txt_dir, Path(filename).stem + '.aiff')
+    # if os.path.isfile(aiff_filename):
+    #     print('"{}" already exists. Skipping.'.format(aiff_filename))
+    # else:
+    #     use_voice = ''
+    #     if voice:
+    #         use_voice = '-v {} '.format(voice)
+    #     cmd = 'say {}-f "{}" -o "{}"'.format(use_voice, filename, aiff_filename)
+    #     print('Converting "{}" to audio...'.format(filename))
+    #     call(cmd, shell=True)
+txt_files = sorted(glob.glob(os.path.join(txt_dir, '*.txt')))
+with multiprocessing.Pool(multiprocessing.cpu_count()) as p:
+    p.map(txt_to_aiff, [(txt_dir, x) for x in txt_files])
+
 
 # Now convert aiff files to m4a
 print('# Converting aiff files to m4a')
@@ -149,14 +180,4 @@ for filename in m4a_files:
     start = end
 fl.close()
 fm.close()
-
-# Compiling ebook
-print('# Compiling eBook')
-audiobook_name = '{} by {}.m4b'.format(title, author)
-cmd = 'ffmpeg -f concat -safe 0 -i "{}" -i "{}" -map_metadata 1 -vn -y -acodec copy "{}"'.format(
-    file_list_path, metadata_path, audiobook_name)
-call(cmd, shell=True)
-cmd = 'mp4art -q --add "{}" "{}"'.format(cover_filename, audiobook_name)
-call(cmd, shell=True)
-
-
+compile_audiobook()

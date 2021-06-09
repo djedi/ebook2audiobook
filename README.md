@@ -32,9 +32,9 @@ You can pass the following args into the script:
 You can also save time when testing by creating a `meta.yaml` file to specify the title, author, and voice. Here is an example:
 
 ```yaml
-Title: Alice’s Adventures in Wonderland
-Author: Lewis Carroll
-Voice: Samantha
+title: Alice’s Adventures in Wonderland
+author: Lewis Carroll
+voice: Samantha
 ```
 
 I've included a directory named `Alice in Wonderland` so that you can test this script and use it for an example.
